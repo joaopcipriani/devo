@@ -1,0 +1,82 @@
+{
+  "name": "Devocional Diário 2026",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 7,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "name": "Cron",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "filePath": "/projetos/n8n/data/devocionais/devocional_2026_temas_semanais_reflexivo.json"
+      },
+      "name": "Ler Devocional JSON",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "options": {
+          "keepSource": false
+        }
+      },
+      "name": "Converter para JSON",
+      "type": "n8n-nodes-base.moveBinaryData",
+      "typeVersion": 1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const hoje = new Date().toISOString().split('T')[0];\n\nconst devocionais = items[0].json.devocionais;\n\nconst devocionalHoje = devocionais.find(d => d.data === hoje);\n\nif (!devocionalHoje) {\n  throw new Error('Devocional não encontrado para ' + hoje);\n}\n\nreturn [{ json: devocionalHoje }];"
+      },
+      "name": "Selecionar Devocional do Dia",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "mensagem",
+              "value": "📖 *Devocional de Hoje*\n\n*Tema da semana:* {{$json.tema_semanal}}\n\n*Leitura:* {{$json.leitura.texto}} ({{$json.leitura.referencia}})\n\n*Reflexão:* {{$json.reflexao}}\n\n*Aplicação:* {{$json.aplicacao}}\n\n🙏 *Oração:* {{$json.oracao}}"
+            }
+          ]
+        }
+      },
+      "name": "Formatar Mensagem",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [1000, 300]
+    }
+  ],
+  "connections": {
+    "Cron": {
+      "main": [[{ "node": "Ler Devocional JSON", "type": "main", "index": 0 }]]
+    },
+    "Ler Devocional JSON": {
+      "main": [[{ "node": "Converter para JSON", "type": "main", "index": 0 }]]
+    },
+    "Converter para JSON": {
+      "main": [[{ "node": "Selecionar Devocional do Dia", "type": "main", "index": 0 }]]
+    },
+    "Selecionar Devocional do Dia": {
+      "main": [[{ "node": "Formatar Mensagem", "type": "main", "index": 0 }]]
+    }
+  }
+}
